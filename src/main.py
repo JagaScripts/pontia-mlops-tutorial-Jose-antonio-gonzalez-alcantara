@@ -19,6 +19,7 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+logger=logging.getLogger("adult-income")
 
 run_name = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
@@ -37,17 +38,17 @@ MODEL_DIR.mkdir(exist_ok=True)
 
 def main():
     script_start = time.time()
-    logging.info(f"System info: {platform.platform()}")
+    logger.info(f"System info: {platform.platform()}")
 
-    train_df, test_df = load_data(DATA_DIR / "adult.data", DATA_DIR / "adult.tests", logging)
-    X_train, X_test, y_train, y_test, scaler, encoders = preprocess_data(train_df, test_df, logging)
+    train_df, test_df = load_data(DATA_DIR / "adult.data", DATA_DIR / "adult.test")
+    X_train, X_test, y_train, y_test, scaler, encoders = preprocess_data(train_df, test_df)
     mlflow.autolog()
     with mlflow.start_run(run_name=run_name):
         start_time = time.time()
-        model = train_model(X_train, y_train, logging)
+        model = train_model(X_train, y_train)
         elapsed = time.time() - start_time
-        logging.info(f"Model training complete. Time taken: {elapsed:.2f} seconds")
-        evaluate(model, X_test, y_test, logging)
+        logger.info(f"Model training complete. Time taken: {elapsed:.2f} seconds")
+        evaluate(model, X_test, y_test)
 
         # Save and log model with metadata
         model_path = MODEL_DIR / "model.pkl"
@@ -58,7 +59,7 @@ def main():
         joblib.dump(encoders, MODEL_DIR / "encoders.pkl")
 
     total_time = time.time() - script_start
-    logging.info(f"Script completed in {total_time:.2f} seconds.")
+    logger.info(f"Script completed in {total_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()

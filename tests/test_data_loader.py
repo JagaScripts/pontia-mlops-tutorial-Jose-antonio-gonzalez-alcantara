@@ -1,39 +1,44 @@
 import pytest
 import pandas as pd
-from data_loader import load_data, preprocess_data
+import numpy as np
+from io import StringIO
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-def test_load_data(tmp_path, caplog):
-    sample_data = (
-        "39, State-gov, 77516, Bachelors, 13, Never-married, Adm-clerical, "
-        "Not-in-family, White, Male, 2174, 0, 40, United-States, <=50K\n"
-    )
-    train_path = tmp_path / "adult.data"
-    test_path = tmp_path / "adult.tests"
-    train_path.write_text(sample_data)
-    test_path.write_text("income\n" + sample_data)
+from data_loader import load_data, preprocess_data  # Update this import path as needed
 
-    train_df, test_df = load_data(train_path, test_path, logging=caplog.handler)
-    assert not train_df.empty
-    assert not test_df.empty
+@pytest.fixture
+def sample_csv_data():
+    train_csv = StringIO("""39, State-gov, 77516, HS-grad, 13, Divorced, Handlers-cleaners, Not-in-family, White, Male, 0, 0, 40, United-States, <=50K.
+50, Private, 83311, Bachelors, 13, Married, Exec-managerial, Husband, White, Female, 0, 0, 13, United-States, >50K
+""")
+    test_csv = StringIO("""
+    |1x3 Cross validator
+38, Private, 215646, HS-grad, 9, Divorced, Handlers-cleaners, Not-in-family, White, Male, 0, 0, 40, United-States, <=50K.
+28, Private, 338409, Bachelors, 13, Married, Exec-managerial, Husband, White, Female, 0, 0, 40, United-States, >50K.
+""")
+    return train_csv, test_csv
 
-def test_preprocess_data(caplog):
-    df = pd.DataFrame({
-        "age": [25, 32],
-        "workclass": ["Private", "Self-emp"],
-        "fnlwgt": [77516, 83311],
-        "education": ["Bachelors", "HS-grad"],
-        "education-num": [13, 9],
-        "marital-status": ["Never-married", "Married-civ-spouse"],
-        "occupation": ["Tech-support", "Craft-repair"],
-        "relationship": ["Not-in-family", "Husband"],
-        "race": ["White", "Black"],
-        "sex": ["Male", "Female"],
-        "capital-gain": [0, 0],
-        "capital-loss": [0, 0],
-        "hours-per-week": [40, 50],
-        "native-country": ["United-States", "Cuba"],
-        "income": [">50K", "<=50K"]
-    })
-    X_train, X_test, y_train, y_test, scaler, encoders = preprocess_data(df, df, logging=caplog.handler)
-    assert X_train.shape == X_test.shape
-    assert y_train.shape == y_test.shape
+def test_load_data(sample_csv_data):
+    train_csv, test_csv = sample_csv_data
+    train_df, test_df = load_data(train_csv, test_csv)
+
+    assert isinstance(train_df, pd.DataFrame)
+    assert isinstance(test_df, pd.DataFrame)
+
+    assert train_df.shape[0] == 2
+    assert test_df.shape[0] == 2
+    assert "income" in test_df.columns
+    assert not test_df["income"].str.contains("\.").any(), "Periods were not removed from test income column"
+
+def test_preprocess_data(sample_csv_data):
+    train_csv, test_csv = sample_csv_data
+    train_df, test_df = load_data(train_csv, test_csv)
+    X_train, X_test, y_train, y_test, scaler, encoders = preprocess_data(train_df, test_df)
+
+    assert isinstance(X_train, np.ndarray)
+    assert isinstance(y_train, np.ndarray)
+    assert X_train.shape == (2, X_train.shape[1])
+    assert X_test.shape == (2, X_train.shape[1])
+    assert isinstance(scaler, StandardScaler)
+    assert isinstance(encoders, dict)
+    assert all(isinstance(le, LabelEncoder) for le in encoders.values())
