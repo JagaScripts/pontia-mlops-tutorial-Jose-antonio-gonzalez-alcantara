@@ -6,9 +6,9 @@ import mlflow
 import mlflow.sklearn
 from pathlib import Path
 from datetime import datetime
-from data_loader import load_data, preprocess_data
-from evaluate import evaluate
-from model import train_model
+from src.data_loader import load_data, preprocess_data
+from src.evaluate import evaluate
+from src.model import train_model
 
 # Configurar logging (consola + archivo)
 logging.basicConfig(
@@ -39,7 +39,7 @@ def main():
     script_start = time.time()
     logging.info(f"System info: {platform.platform()}")
 
-    train_df, test_df = load_data(DATA_DIR / "adult.data", DATA_DIR / "adult.test", logging)
+    train_df, test_df = load_data(DATA_DIR / "adult.data", DATA_DIR / "adult.tests", logging)
     X_train, X_test, y_train, y_test, scaler, encoders = preprocess_data(train_df, test_df, logging)
     mlflow.autolog()
     with mlflow.start_run(run_name=run_name):

@@ -9,13 +9,13 @@ COLUMNS = [
 ]
 
 def load_data(train_path, test_path, logging):
-    logging.info("Loading training and test datasets...")
+    logging.info("Loading training and tests datasets...")
     train_df = pd.read_csv(train_path, header=None, names=COLUMNS, na_values=" ?", skipinitialspace=True)
     test_df = pd.read_csv(test_path, header=0, names=COLUMNS, na_values=" ?", skipinitialspace=True, skiprows=1)
     test_df["income"] = test_df["income"].str.replace(".", "", regex=False)
 
     logging.info(f"Train shape: {train_df.shape}, Test shape: {test_df.shape}")
-    logging.info(f"Missing values (train): {train_df.isnull().sum().sum()}, (test): {test_df.isnull().sum().sum()}")
+    logging.info(f"Missing values (train): {train_df.isnull().sum().sum()}, (tests): {test_df.isnull().sum().sum()}")
     return train_df.dropna(), test_df.dropna()
 
 def preprocess_data(train_df, test_df, logging):
