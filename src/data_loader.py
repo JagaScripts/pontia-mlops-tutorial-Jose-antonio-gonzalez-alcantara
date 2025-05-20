@@ -1,4 +1,47 @@
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-def load_data(path):
-    return pd.read_csv(path)
+# Column names
+COLUMNS = [
+    "age", "workclass", "fnlwgt", "education", "education-num", "marital-status",
+    "occupation", "relationship", "race", "sex", "capital-gain", "capital-loss",
+    "hours-per-week", "native-country", "income"
+]
+
+def load_data(train_path, test_path, logging):
+    logging.info("Loading training and test datasets...")
+    train_df = pd.read_csv(train_path, header=None, names=COLUMNS, na_values=" ?", skipinitialspace=True)
+    test_df = pd.read_csv(test_path, header=0, names=COLUMNS, na_values=" ?", skipinitialspace=True, skiprows=1)
+    test_df["income"] = test_df["income"].str.replace(".", "", regex=False)
+
+    logging.info(f"Train shape: {train_df.shape}, Test shape: {test_df.shape}")
+    logging.info(f"Missing values (train): {train_df.isnull().sum().sum()}, (test): {test_df.isnull().sum().sum()}")
+    return train_df.dropna(), test_df.dropna()
+
+def preprocess_data(train_df, test_df, logging):
+    logging.info("Preprocessing and encoding features...")
+    cat_cols = train_df.select_dtypes(include="object").columns.drop("income")
+    label_encoders = {}
+
+    for col in cat_cols:
+        le = LabelEncoder()
+        train_df[col] = le.fit_transform(train_df[col])
+        test_df[col] = le.transform(test_df[col])
+        label_encoders[col] = le
+
+    train_df["income"] = train_df["income"].apply(lambda x: 1 if x == ">50K" else 0)
+    test_df["income"] = test_df["income"].apply(lambda x: 1 if x == ">50K" else 0)
+
+    X_train = train_df.drop("income", axis=1)
+    y_train = train_df["income"]
+    X_test = test_df.drop("income", axis=1)
+    y_test = test_df["income"]
+
+    scaler = StandardScaler()
+    logging.info("Scaling features...")
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    logging.info(f"Feature columns: {list(X_train.columns)}")
+    logging.info(f"X_train shape: {X_train_scaled.shape}, X_test shape: {X_test_scaled.shape}")
+    return X_train_scaled, X_test_scaled, y_train.to_numpy(), y_test.to_numpy(), scaler, label_encoders
