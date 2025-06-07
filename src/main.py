@@ -24,7 +24,7 @@ logger=logging.getLogger("adult-income")
 run_name = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
 # MLflow config
-MLFLOW_URI = "http://57.151.65.76:5000"  # Replace with your real URL
+MLFLOW_URI = "http://localhost:5000"
 EXPERIMENT_NAME = "adult-income"
 
 mlflow.set_tracking_uri(MLFLOW_URI)
@@ -43,7 +43,7 @@ def main():
     train_df, test_df = load_data(DATA_DIR / "adult.data", DATA_DIR / "adult.test")
     X_train, X_test, y_train, y_test, scaler, encoders = preprocess_data(train_df, test_df)
     mlflow.autolog()
-    with mlflow.start_run(run_name=run_name):
+    with mlflow.start_run(run_name=run_name) as run:
         start_time = time.time()
         model = train_model(X_train, y_train)
         elapsed = time.time() - start_time
@@ -57,6 +57,8 @@ def main():
         # Save and log scaler and encoders
         joblib.dump(scaler, MODEL_DIR / "scaler.pkl")
         joblib.dump(encoders, MODEL_DIR / "encoders.pkl")
+        with open("run_id.txt", "w") as f:
+            f.write(run.info.run_id)
 
     total_time = time.time() - script_start
     logger.info(f"Script completed in {total_time:.2f} seconds.")

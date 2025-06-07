@@ -21,25 +21,7 @@ ENV/
 .ipynb_checkpoints/
 *.nbconvert.ipynb
 
-# --- ML & data artifacts ---
-mlruns/
-artifacts/
-models/
-*.log
-*.h5
-*.pkl
-*.joblib
-*.ckpt
 
-# --- Data files ---
-data/
-*.csv
-*.tsv
-*.json
-*.xlsx
-*.parquet
-*.zip
-*.gz
 
 # --- Experiment configs ---
 *.tfvars
